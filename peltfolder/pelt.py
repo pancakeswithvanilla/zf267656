@@ -130,3 +130,9 @@ plt.title('Histogram of Event Durations')
 plt.savefig('event_durations_distribution.png')
 
 print("Histogram saved as 'event_durations_distribution.png'")
+###TODO
+#pad and mask duration for creating fixed length but ignoring zero values 
+#create a cGAN for this time series sequence
+#latent space manipulation in GAN
+#DTW read and implement for feature extraction
+#consider other types of architectures for task
