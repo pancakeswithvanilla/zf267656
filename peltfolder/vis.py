@@ -55,3 +55,5 @@ plt.savefig('event_durations_distribution.png')
 
 print("Histogram saved as 'event_durations_distribution.png'")
 
+sorted_durations = sorted(durations)
+print(sorted_durations[707]) #1287
