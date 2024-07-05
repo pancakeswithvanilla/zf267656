@@ -35,7 +35,8 @@ print(f"Mean in Cluster 2 (above or equal to {threshold}): {mean_cluster2}")
 file_name1 = "cluster1values.txt"
 file_name2 = "cluster2values.txt"
 events_file = "events.txt"
-
+non_events_file = "nonevents.txt"
+new_events_file = "newevents.txt"
 # Function to check if the file already contains data
 def is_file_already_written(file_name):
     return os.path.exists(file_name) and os.path.getsize(file_name) > 0
@@ -66,14 +67,71 @@ for index in cluster1_indices:
         event_list.append([start_index, index, duration, signal_avg])
     prev_index = index
 
+prev_index = None
+nonevent_list = []
+start_index = cluster2_indices[0]  # Use cluster2_indices instead of cluster1_indices
+end_index = None
+signal_sum = 0
+
+for index in cluster2_indices:  # Use cluster2_indices instead of cluster1_indices
+    signal_sum += signal_data[index]
+    if prev_index is not None and index - prev_index > 1:
+        signal_sum -= signal_data[index]
+        end_index = prev_index
+        duration = end_index - start_index
+        signal_avg = float(signal_sum // duration)
+        nonevent_list.append([start_index, end_index, duration, signal_avg])
+        start_index = index
+        signal_sum = 0
+    if index == cluster2_indices[-1]:  # Use cluster2_indices instead of cluster1_indices
+        duration = index - start_index
+        signal_avg = float(signal_sum // duration)
+        nonevent_list.append([start_index, index, duration, signal_avg])
+    prev_index = index
+
 # Write cluster 2 data to file if the file is not already written
 # if not is_file_already_written(file_name2):
 #     with open(file_name2, "w") as file2:
 #         for index in cluster2_indices:
 #             file2.write(f"({index}, {signal_data[index]})\n")
+nonevent_list = [nonevent for nonevent in nonevent_list if nonevent[3] >= 240]
+new_event_list = []
+for index in range(1,len(nonevent_list)) :
+    start_index = nonevent_list[index -1][1]+1
+    end_index = nonevent_list[index][0]-1
+    duration = end_index - start_index
+    new_event_list.append([start_index, end_index, duration])
+
+if not is_file_already_written(new_events_file):
+    with open(new_events_file, "w") as file3:
+        for new_event in new_event_list:
+            file3.write(f"{new_event}\n")
+
+if not is_file_already_written(non_events_file):
+    with open(non_events_file, "w") as file3:
+        for non_event in nonevent_list:
+            file3.write(f"{non_event}\n")
+
+            # Plot the signal data for the last event
+last_event = nonevent_list[52]  # Get the last event from the list
+signal_data_subset = signal_data[(last_event[0]):(last_event[1])]
+
+# Create a list of indices for x-axis
+indices = list(range((last_event[0]), (last_event[1])))
+
+# Plot the signal data
+plt.figure(figsize=(10, 6))
+plt.plot(indices, signal_data_subset, color='blue', marker='o', linestyle='-')
+plt.xlabel('Index')
+plt.ylabel('Signal Value')
+plt.title('Signal Data for Last Non Event')
+plt.grid(True)
+
+# Save the plot to a file
+plt.savefig('last_nonevent_signal_plot.png')
 
 
-event_list = [event for event in event_list if not ( (event[2] < 200 and event[3] > 150) or event[2]< 20)]
+event_list = [event for event in event_list if not ( (event[2] < 200 and event[3] > 150) or event[2]< 100 or event[2]>15000)]
 # Write event list to file if the file is not already written
 if not is_file_already_written(events_file):
     with open(events_file, "w") as file3:
@@ -95,41 +153,7 @@ for index in range (len(event_list)):
 avg_duration = avg_duration // len(event_list)
 print("Average duration:",avg_duration) 
 print("Max duration", max_duration,"Max_index:", max_index)
-# Plot the signal data for the last event
-last_event = event_list[147]  # Get the last event from the list
-signal_data_subset = signal_data[last_event[0]:last_event[1]]
 
-# Create a list of indices for x-axis
-indices = list(range(last_event[0], last_event[1]))
-
-# Plot the signal data
-plt.figure(figsize=(10, 6))
-plt.plot(indices, signal_data_subset, color='blue', marker='o', linestyle='-')
-plt.xlabel('Index')
-plt.ylabel('Signal Value')
-plt.title('Signal Data for Last Event')
-plt.grid(True)
-
-# Save the plot to a file
-plt.savefig('last_event_signal_plot.png')
-
-print("Plot saved as 'last_event_signal_plot.png'")
-
-# Plot the distribution of durations
-plt.figure(figsize=(12, 6))
-
-# Histogram
-plt.subplot(1, 2, 1)
-plt.hist(durations, bins=50, edgecolor='k', alpha=0.7)
-plt.xlabel('Duration')
-plt.ylabel('Frequency')
-plt.title('Histogram of Event Durations')
-
-
-# Save the plot to a file
-plt.savefig('event_durations_distribution.png')
-
-print("Histogram saved as 'event_durations_distribution.png'")
 ###TODO
 #pad and mask duration for creating fixed length but ignoring zero values 
 #create a cGAN for this time series sequence

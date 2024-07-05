@@ -36,11 +36,7 @@ for index in range(len(event_list)):
         max_index = index
     avg_duration += event_list[index][2]
 
-avg_duration = avg_duration // len(event_list)
-print("Average duration:", avg_duration)
-print("Max duration", max_duration, "Max index:", max_index)
-
-# Plot the distribution of durations with a focus on durations between 0 and 10000
+# Plot the distribution of durations with a focus on durations between 0 and 10000, all events have 4 nucleotides
 plt.figure(figsize=(12, 6))
 
 # Histogram
@@ -57,3 +53,38 @@ print("Histogram saved as 'event_durations_distribution.png'")
 
 sorted_durations = sorted(durations)
 print(sorted_durations[707]) #1287
+
+# def binary_search(sorted_list, threshold):
+#     left, right = 0, len(sorted_list) - 1
+#     while left <= right:
+#         mid = (left + right) // 2
+#         if sorted_list[mid] <= threshold:
+#             left = mid + 1
+#         else:
+#             right = mid - 1
+#     return left
+
+# index_exceeds_10000 = binary_search(sorted_durations, 10000)
+# print(f"Index where sorted durations exceed 10000: {index_exceeds_10000}")
+# for index in range (1323,1344): #3 outliers at 368136 458879 602070, investigate this later probably multiple events, #15798, pad everything at 15000
+#     print(sorted_durations[index])
+
+# Plot the signal data for the last event
+last_event = event_list[220]  # Get the last event from the list
+signal_data_subset = signal_data[(last_event[0]):(last_event[1])]
+
+# Create a list of indices for x-axis
+indices = list(range((last_event[0]), (last_event[1])))
+
+# Plot the signal data
+plt.figure(figsize=(10, 6))
+plt.plot(indices, signal_data_subset, color='blue', marker='o', linestyle='-')
+plt.xlabel('Index')
+plt.ylabel('Signal Value')
+plt.title('Signal Data for Last Event')
+plt.grid(True)
+
+# Save the plot to a file
+plt.savefig('last_event_signal_plot.png')
+
+print("Plot saved as 'last_event_signal_plot.png'")
