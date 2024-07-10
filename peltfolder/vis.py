@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import pyabf
-
+import ast
+import re
 # Load signal data
 abf_file = "/work/zf267656/peltfolder/dnadata/20210703 wtAeL 4M KCl A4 p2 120mV-9.abf"
 signal = pyabf.ABF(abf_file)
@@ -19,7 +20,7 @@ def read_event_list(file_name):
     return event_list
 
 # Read event list from file
-events_file = "events.txt"
+events_file = "newevents.txt"
 event_list = read_event_list(events_file)
 
 # Print event list for reference
@@ -40,7 +41,7 @@ for index in range(len(event_list)):
 plt.figure(figsize=(12, 6))
 
 # Histogram
-plt.hist([d for d in durations if d <= 10000], bins=50, edgecolor='k', alpha=0.7)
+plt.hist([d for d in durations if d <= 11000], bins=50, edgecolor='k', alpha=0.7)
 plt.xlabel('Duration')
 plt.ylabel('Frequency')
 plt.title('Histogram of Event Durations (0 to 10000)')
@@ -70,11 +71,11 @@ print(sorted_durations[707]) #1287
 #     print(sorted_durations[index])
 
 # Plot the signal data for the last event
-last_event = event_list[220]  # Get the last event from the list
-signal_data_subset = signal_data[(last_event[0]):(last_event[1])]
+last_event = event_list[46]  # Get the last event from the list
+signal_data_subset = signal_data[(last_event[0]-100):(last_event[1]+100)]
 
 # Create a list of indices for x-axis
-indices = list(range((last_event[0]), (last_event[1])))
+indices = list(range((last_event[0]-100), (last_event[1]+100)))
 
 # Plot the signal data
 plt.figure(figsize=(10, 6))
@@ -88,3 +89,50 @@ plt.grid(True)
 plt.savefig('last_event_signal_plot.png')
 
 print("Plot saved as 'last_event_signal_plot.png'")
+
+file_name = "signalevents.txt"
+signals = []
+# Function to read signals from a file
+def read_signals(file_name):
+    signals = []
+    with open(file_name, 'r') as file:
+        for line in file:
+            signal = line.split()
+            signals.append(signal)
+    return signals
+
+# Function to pad signals to a desired length
+def pad_signals(signals, desired_length):
+    padded_signals = []
+    for signal in signals:
+        if len(signal) < desired_length:
+            # Pad the signal with zeros
+            padded_signal = np.pad(signal, (0, desired_length - len(signal)), mode='constant', constant_values=0)
+        else:
+            padded_signal = signal
+        padded_signals.append(padded_signal)
+    return padded_signals
+
+# Function to write padded signals back to the file
+def write_signals(file_name, signals):
+    with open(file_name, 'w') as file:
+        for signal in signals:
+            # Convert the numpy array to a space-separated string and write it to the file
+            file.write(' '.join(map(str, signal)) + '\n')
+
+
+def check_line_length(file_name):
+    total_length = 0
+    with open(file_name, 'r') as file:
+        for line in file:
+            numbers = line.split()
+            if len(numbers) == 11000:
+                    total_length = total_length + 1
+    return total_length
+
+# Read, pad, and write the signals
+signals = read_signals(file_name)
+padded_signals = pad_signals(signals, 11000)
+write_signals(file_name, padded_signals)
+total_length= check_line_length(file_name)
+print(total_length)

@@ -37,6 +37,7 @@ file_name2 = "cluster2values.txt"
 events_file = "events.txt"
 non_events_file = "nonevents.txt"
 new_events_file = "newevents.txt"
+signal_events_file = "signalevents.txt"
 # Function to check if the file already contains data
 def is_file_already_written(file_name):
     return os.path.exists(file_name) and os.path.getsize(file_name) > 0
@@ -101,6 +102,22 @@ for index in range(1,len(nonevent_list)) :
     end_index = nonevent_list[index][0]-1
     duration = end_index - start_index
     new_event_list.append([start_index, end_index, duration])
+
+new_event_list = [newevent for newevent in new_event_list if newevent[2]>= 100 and newevent[2]<= 11000]
+total_events = []
+one_event =[]
+for event in new_event_list:
+    one_event =[]
+    start_index = event[0]
+    while start_index <= event[1]:
+        one_event.append(signal_data[start_index])
+        start_index = start_index + 1
+    total_events.append(one_event)
+
+if not is_file_already_written(signal_events_file):
+    with open(signal_events_file, "w") as file3:
+        for new_event in total_events:
+            file3.write(" ".join(map(str, new_event)) + "\n")
 
 if not is_file_already_written(new_events_file):
     with open(new_events_file, "w") as file3:
