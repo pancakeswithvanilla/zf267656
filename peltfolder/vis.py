@@ -22,26 +22,39 @@ def read_event_list(file_name):
 # Read event list from file
 events_file = "newevents.txt"
 event_list = read_event_list(events_file)
+nonevents_file = "nonevents.txt"
+nonevent_list = read_event_list(nonevents_file)
 
 # Print event list for reference
-print(f"Total events: {len(event_list)}")
-avg_duration = 0
-max_duration = 0
-max_index = 0
+print(f"Total events: {len(nonevent_list)}")
 durations = []
 
-for index in range(len(event_list)):
-    durations.append(event_list[index][2])
-    if max_duration < event_list[index][2]:
-        max_duration = event_list[index][2]
-        max_index = index
-    avg_duration += event_list[index][2]
+def calculate_durations(event_list):
+    avg_duration = 0
+    max_duration = 0
+    max_index = 0
+    for index in range(len(event_list)):
+        durations.append(event_list[index][2])
+        if max_duration < event_list[index][2]:
+            max_duration = event_list[index][2]
+            max_index = index
+        avg_duration += event_list[index][2]
+    avg_duration = avg_duration // len(event_list)
+    return max_index, max_duration, avg_duration
+
+max_event_ind, max_event_dur, avg_event_dur = calculate_durations(event_list)
+print(" Max event duration:", max_event_dur)
+print(" Avg event duration:", avg_event_dur)
+max_nonevent_ind, max_nonevent_dur, avg_nonevent_dur = calculate_durations(nonevent_list)
+print(" Max nonevent duration:", max_nonevent_dur)
+print(" Avg nonevent duration:", avg_nonevent_dur)
+
 
 # Plot the distribution of durations with a focus on durations between 0 and 10000, all events have 4 nucleotides
 plt.figure(figsize=(12, 6))
 
 # Histogram
-plt.hist([d for d in durations if d <= 11000], bins=50, edgecolor='k', alpha=0.7)
+plt.hist([d for d in durations if d <= 10000], bins=50, edgecolor='k', alpha=0.7)
 plt.xlabel('Duration')
 plt.ylabel('Frequency')
 plt.title('Histogram of Event Durations (0 to 10000)')
@@ -90,7 +103,8 @@ plt.savefig('last_event_signal_plot.png')
 
 print("Plot saved as 'last_event_signal_plot.png'")
 
-file_name = "signalevents.txt"
+events_name = "signalevents.txt"
+nonevents_name ="signalnonevents.txt"
 signals = []
 # Function to read signals from a file
 def read_signals(file_name):
@@ -113,6 +127,22 @@ def pad_signals(signals, desired_length):
         padded_signals.append(padded_signal)
     return padded_signals
 
+def fragment_signals(signals, desired_length):
+    fragmented_signals = []
+    for signal in signals:
+        # Determine the number of fragments for this signal
+        num_fragments = len(signal) // desired_length
+        if len(signal) % desired_length != 0:
+            num_fragments += 1
+        
+        # Split the signal into fragments
+        for i in range(num_fragments):
+            start_idx = i * desired_length
+            end_idx = start_idx + desired_length
+            fragmented_signals.append(signal[start_idx:end_idx])
+    
+    return fragmented_signals
+
 # Function to write padded signals back to the file
 def write_signals(file_name, signals):
     with open(file_name, 'w') as file:
@@ -131,8 +161,14 @@ def check_line_length(file_name):
     return total_length
 
 # Read, pad, and write the signals
-signals = read_signals(file_name)
-padded_signals = pad_signals(signals, 11000)
-write_signals(file_name, padded_signals)
-total_length= check_line_length(file_name)
-print(total_length)
+desired_length = 11000
+# signals = read_signals(events_name)
+# padded_signals = pad_signals(signals, desired_length)
+# write_signals(events_name, padded_signals)
+# total_length= check_line_length(events_name)
+signals = read_signals(nonevents_name)
+fragmented_signals = fragment_signals(signals, desired_length)
+fragmented_padded_signals = pad_signals(fragmented_signals, desired_length)
+write_signals(nonevents_name, fragmented_padded_signals)
+total_length= check_line_length(nonevents_name)
+print("length of nonevents is equal:",total_length)
