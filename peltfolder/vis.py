@@ -144,10 +144,19 @@ def fragment_signals(signals, desired_length):
     return fragmented_signals
 
 # Function to write padded signals back to the file
-def write_signals(file_name, signals):
+def write_signals(file_name, signals, max_rows=10):
+    """
+    Write the first 'max_rows' signals to a file.
+    
+    :param file_name: The name of the file to write the signals to.
+    :param signals: A list of signals (arrays or lists) to be written.
+    :param max_rows: Maximum number of rows to write. Default is 10.
+    """
     with open(file_name, 'w') as file:
-        for signal in signals:
-            # Convert the numpy array to a space-separated string and write it to the file
+        for i, signal in enumerate(signals):
+            if i >= max_rows:
+                break
+            # Convert the numpy array or list to a space-separated string and write it to the file
             file.write(' '.join(map(str, signal)) + '\n')
 
 
