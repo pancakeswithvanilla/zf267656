@@ -1,0 +1,4 @@
+signalnonevents.txt
+signalevents.txt
+discriminator_epoch_*.h5
+generator_epoch_*.h5
