@@ -2,3 +2,4 @@ signalnonevents.txt
 signalevents.txt
 discriminator_epoch_*.h5
 generator_epoch_*.h5
+generated_samples_epoch_1000.txt

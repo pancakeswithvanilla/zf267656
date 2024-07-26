@@ -7,6 +7,7 @@ from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 from tensorflow.keras.losses import binary_crossentropy
+from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix
 import torch.nn as nn
 import torch.optim as optim
 import torch
@@ -85,7 +86,7 @@ def build_discriminator():
     # Pass the masked input through the model
     validity = model(model_input)
     
-    return Model([signal_input, signal_label_input], validity)
+    return Model([signal_input, signal_label_input], validity) # signal label input is for event vs nonevent, validity for sample is real vs fake
 
 def build_generator():
     model = Sequential()
@@ -110,6 +111,20 @@ def build_generator():
     
     return Model([noise, signal_label], signal)
 
+def save_signals_to_txt(file_name, signals):
+    """
+    Save each signal to a text file, with each signal on a separate line.
+
+    Args:
+        file_name (str): The path to the file where signals will be saved.
+        signals (np.ndarray): A NumPy array where each row represents a signal.
+    """
+    with open(file_name, 'w') as file:
+        for signal in signals:
+            # Convert each signal to a space-separated string and write it to the file
+            line = ' '.join(map(str, signal))
+            file.write(line + '\n')
+
 
 def main():
     # Sample data
@@ -129,7 +144,7 @@ def main():
 
     x_train, x_test, y_train, y_test = prepare_data()
     x_test = x_test.astype(np.float32)
-    y_test = y_test.astype(np.float32)
+    y_test = y_test.astype(np.float32) # event vs nonevent
     assert not np.any(np.isnan(x_test)), "x_test contains NaNs"
     assert not np.any(np.isinf(x_test)), "x_test contains Infs"
     assert not np.any(np.isnan(y_test)), "y_test contains NaNs"
@@ -147,7 +162,7 @@ def main():
     label = Input(shape=(1,))
     generated_signal = generator([noise, label])
     discriminator.trainable = False
-    validity = discriminator([generated_signal, label])
+    validity = discriminator([generated_signal, label]) # fake or real sample
     
     cgan = Model([noise, label], validity)
     cgan.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
@@ -158,7 +173,7 @@ def main():
         real_signals, labels = x_train[idx], y_train[idx]
         
         noise = np.random.normal(0, 1, (batch_size, latent_dim))
-        fake_labels = np.random.randint(0, 2, (batch_size, 1))
+        fake_labels = np.random.randint(0, 2, (batch_size, 1)) # event or not event
         fake_signals = generator.predict([noise, fake_labels])
         
         d_loss_real = discriminator.train_on_batch([real_signals, labels], np.ones((batch_size, 1)))
@@ -174,35 +189,33 @@ def main():
             print(f'Epoch [{epoch + 1}/{epochs}], D Loss: {d_loss[0]}, D Accuracy: {100*d_loss[1]}, G Loss: {g_loss[0]}, G Accuracy: {100*g_loss[1]}')
             
             # Save models
-            generator.save(f'generator_epoch_{epoch + 1}.h5')
-            discriminator.save(f'discriminator_epoch_{epoch + 1}.h5')
-            
-            # Generate and save samples
+            # generator.save(f'generator_epoch_{epoch + 1}.h5')
+            # discriminator.save(f'discriminator_epoch_{epoch + 1}.h5')
+    
+            # Inside your training loop
+        if epoch == epochs - 1:
             generated_samples = generator.predict([np.random.normal(0, 1, (16, latent_dim)), np.random.randint(0, 2, (16, 1))])
-            # Save or visualize generated_samples
-    print(f"x_test shape: {x_test.shape}")
-    print(f"y_test shape: {y_test.shape}")
-        # Evaluate discriminator performance on test data
-    print(f"Any None in x_test: {np.any(np.isnan(x_test))}")
-    print(f"Any None in y_test: {np.any(np.isnan(y_test))}")
-    # Evaluate the discriminator on test data
-    # dummy_x_test = np.random.rand(4, input_dim).astype(np.float32)
-    # dummy_y_test = np.random.randint(0, 2, (4, 1)).astype(np.float32)
+            
+            # Save generated samples to a text file
+            save_signals_to_txt(f'generated_samples_epoch_{epoch + 1}.txt', generated_samples)
 
-    loss, accuracy = custom_evaluate(discriminator,x_test, y_test)
-    print(f'Test Loss: {loss:.4f}')
-    print(f'Test Accuracy: {accuracy:.4f}')
+    noise = np.random.normal(0, 1, (x_test.shape[0], latent_dim))
+    fake_labels = np.random.randint(0, 2, (x_test.shape[0], 1))
+    fake_signals = generator.predict([noise, fake_labels])
+    evaluate_discriminator_performance(discriminator, x_test, y_test, fake_signals, fake_labels)
+    evaluate_samples(discriminator,x_test, y_test)
+    evaluate_samples(discriminator, fake_signals, fake_labels)
 
-def custom_evaluate(model, x_data, y_data):
+def evaluate_samples(model, x_data, y_data):
     # Ensure y_data contains both data and labels
     assert x_data.shape[0] == y_data.shape[0], "Mismatch between x_data and y_data samples"
     
-    # Extract labels
-    x_data_signals = x_data  # These are the signals
-    x_data_labels = y_data    # These are the labels
+    # Extract signals and labels
+    x_data_signals = x_data
+    x_data_labels = y_data
     
     # Perform predictions
-    predictions = model.predict([x_data_signals, x_data_labels])
+    predictions = model.predict([x_data_signals, x_data_labels])  # Predict if real or fake samples
     
     # Calculate loss
     loss_fn = tf.keras.losses.BinaryCrossentropy()
@@ -212,7 +225,75 @@ def custom_evaluate(model, x_data, y_data):
     predictions_binary = (predictions > 0.5).astype(np.float32)
     accuracy = np.mean(predictions_binary == x_data_labels)
     
-    return loss, accuracy
+    # Metrics for real events vs. real nonevents
+    real_event_mask = (x_data_labels == 1)
+    real_nonevent_mask = (x_data_labels == 0)
+    
+    real_event_predictions = predictions_binary[real_event_mask]
+    real_nonevent_predictions = predictions_binary[real_nonevent_mask]
+    
+    # Calculate metrics for real events
+    real_event_labels = x_data_labels[real_event_mask]
+    real_event_pred_event = np.mean(real_event_predictions == real_event_labels)  # Correctly predicted events
+    real_event_pred_nonevent = np.mean(real_event_predictions != real_event_labels)  # Incorrectly predicted events
+    
+    # Calculate metrics for real nonevents
+    real_nonevent_labels = x_data_labels[real_nonevent_mask]
+    real_nonevent_pred_nonevent = np.mean(real_nonevent_predictions == real_nonevent_labels)  # Correctly predicted nonevents
+    real_nonevent_pred_event = np.mean(real_nonevent_predictions != real_nonevent_labels)  # Incorrectly predicted nonevents
+    
+    # Print out metrics
+    print(f"Overall Loss: {loss:.4f}")
+    print(f"Overall Accuracy: {accuracy:.4f}")
+    print(f"Real\Fake Event Predicted as Event: {real_event_pred_event:.4f}")
+    print(f"Real\Fake Event Predicted as Nonevent: {real_event_pred_nonevent:.4f}")
+    print(f"Real\Fake Nonevent Predicted as Nonevent: {real_nonevent_pred_nonevent:.4f}")
+    print(f"Real\Fake Nonevent Predicted as Event: {real_nonevent_pred_event:.4f}")
+
+
+
+def evaluate_discriminator_performance(discriminator, x_real, y_real, x_fake, y_fake):
+    """
+    Evaluate the performance of the discriminator by predicting and comparing real vs. fake samples.
+
+    Args:
+        discriminator (tf.keras.Model): The trained discriminator model.
+        x_real (np.ndarray): Real signal samples.
+        y_real (np.ndarray): Labels for real signal samples (event or nonevent).
+        x_fake (np.ndarray): Fake signal samples generated by the generator.
+        y_fake (np.ndarray): Labels for fake signal samples (event or nonevent).
+    """
+    # Predict if samples are real or fake
+    real_predictions = discriminator.predict([x_real, y_real])
+    fake_predictions = discriminator.predict([x_fake, y_fake])
+
+    # Convert predictions to binary (real or fake)
+    real_predictions_binary = (real_predictions > 0.5).astype(np.float32)
+    fake_predictions_binary = (fake_predictions > 0.5).astype(np.float32)
+
+    # Define masks for real and fake samples
+    real_mask = (y_real == 1)
+    fake_mask = (y_fake == 0)
+
+    # Metrics for real samples
+    real_pred_real = real_predictions_binary[real_mask]  # Predictions for real samples
+    real_pred_fake = real_predictions_binary[~real_mask]  # Predictions for fake samples
+
+    # Metrics for fake samples
+    fake_pred_real = fake_predictions_binary[real_mask]  # Predictions for real samples classified as fake
+    fake_pred_fake = fake_predictions_binary[~real_mask]  # Predictions for fake samples classified as real
+
+    # Calculate how many samples were predicted as fake or real correctly or incorrectly
+    real_predicted_fake_as_real = np.sum(real_predictions_binary[real_mask] == 0)
+    real_predicted_fake_as_fake = np.sum(real_predictions_binary[real_mask] == 1)
+    fake_predicted_real_as_fake = np.sum(fake_predictions_binary[fake_mask] == 1)
+    fake_predicted_real_as_real = np.sum(fake_predictions_binary[fake_mask] == 0)
+
+    print(f"Real samples predicted as fake: {real_predicted_fake_as_real}")
+    print(f"Real samples predicted as real: {real_predicted_fake_as_fake}")
+    print(f"Fake samples predicted as real: {fake_predicted_real_as_real}")
+    print(f"Fake samples predicted as fake: {fake_predicted_real_as_fake}")
+
 
 if __name__ == "__main__":
     main()
