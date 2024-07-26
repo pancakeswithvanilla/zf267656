@@ -169,6 +169,29 @@ def check_line_length(file_name):
                     total_length = total_length + 1
     return total_length
 
+def plot_signal(signal, output_file_name):
+    """
+    Plot the signal data and save the plot to a file.
+
+    Args:
+        signal (np.ndarray): The signal data to be plotted.
+        output_file_name (str): The file name to save the plot.
+    """
+    # Determine the indices of the signal
+    indices = np.arange(len(signal))
+    
+    # Plot the signal data
+    plt.figure(figsize=(10, 6))
+    plt.plot(indices, signal, color='blue', marker='o', linestyle='-')
+    plt.xlabel('Index')
+    plt.ylabel('Signal Value')
+    plt.title('Signal Data')
+    plt.grid(True)
+
+    # Save the plot to a file
+    plt.savefig(output_file_name)
+    plt.close()
+
 # Read, pad, and write the signals
 desired_length = 11000
 # signals = read_signals(events_name)
