@@ -17,13 +17,17 @@ from numpy import zeros
 from numpy import ones
 from numpy.random import rand
 from numpy.random import randn
+import matplotlib.pyplot as plt
+import os
 
 input_dim = 11000
 signal_events_file = "signalevents.txt"
 signal_nonevents_file = "signalnonevents.txt"
 batch_size = 64
+dropout_rate = 0.2
 latent_dim = 50 # see how model performs for different latent dim values
-epochs = 1000
+epochs = 100
+max_value = 269.25
 save_interval = 100
 def read_signals(file_name):
     signals = []
@@ -76,10 +80,14 @@ def build_discriminator():
     
     # Create the model
     model = Sequential([
-        Dense(512, input_shape=(input_dim + latent_dim,)),  # Ensure correct input shape
+        Dense(512, input_shape=(input_dim + latent_dim,)),
+        BatchNormalization(),
         LeakyReLU(alpha=0.2),
+        Dropout(dropout_rate),
         Dense(256),
+        BatchNormalization(),
         LeakyReLU(alpha=0.2),
+        Dropout(dropout_rate),
         Dense(1, activation='sigmoid')
     ])
     
@@ -92,14 +100,17 @@ def build_generator():
     model = Sequential()
     model.add(Dense(256, input_dim=latent_dim * 2))
     model.add(LeakyReLU(alpha=0.2))
+    model.add(Dropout(dropout_rate))
     model.add(BatchNormalization(momentum=0.8))
     model.add(Dense(512))
+    model.add(Dropout(dropout_rate))
     model.add(LeakyReLU(alpha=0.2))
     model.add(BatchNormalization(momentum=0.8))
     model.add(Dense(1024))
     model.add(LeakyReLU(alpha=0.2))
+    model.add(Dropout(dropout_rate))
     model.add(BatchNormalization(momentum=0.8))
-    model.add(Dense(input_dim, activation='tanh'))
+    model.add(Dense(input_dim, activation='sigmoid')) #values between 0 and 1 
     model.add(Reshape((input_dim,)))
     
     noise = Input(shape=(latent_dim,))
@@ -123,10 +134,32 @@ def save_signals_to_txt(file_name, signals):
         for signal in signals:
             # Convert each signal to a space-separated string and write it to the file
             line = ' '.join(map(str, signal))
-            file.write(line + '\n')
+            file.write(line + '\n\n')
+
+def plot_losses(d_losses, g_losses, save_path):
+    epochs = range(1, len(d_losses) + 1)
+    
+    plt.figure(figsize=(12, 6))
+    plt.plot(epochs, d_losses, label='Discriminator Loss', color='blue')
+    plt.plot(epochs, g_losses, label='Generator Loss', color='red')
+    
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Discriminator and Generator Losses')
+    plt.legend()
+    plt.grid(True)
+    
+    # Save the plot to a file
+    plt.savefig(save_path)
+    plt.close()
 
 
-def main():
+def train():
+    d_losses = []
+    g_losses = []
+    save_path ='losses_plot.png'
+    plots_directory = "plots/"
+    file_path = os.path.join(plots_directory, save_path)
     # Sample data
     # discriminator = build_discriminator()
     # discriminator.summary()
@@ -143,12 +176,14 @@ def main():
     # print("Prediction with masked signal:", discriminator.predict([test_signal_with_mask, test_labels]))
 
     x_train, x_test, y_train, y_test = prepare_data()
-    x_test = x_test.astype(np.float32)
-    y_test = y_test.astype(np.float32) # event vs nonevent
-    assert not np.any(np.isnan(x_test)), "x_test contains NaNs"
-    assert not np.any(np.isinf(x_test)), "x_test contains Infs"
-    assert not np.any(np.isnan(y_test)), "y_test contains NaNs"
-    assert not np.any(np.isinf(y_test)), "y_test contains Infs"
+    x_train_normalized = normalize_data(x_train)
+    x_test_normalized = normalize_data(x_test)
+    # x_test = x_test.astype(np.float32)
+    # y_test = y_test.astype(np.float32) # event vs nonevent
+    # assert not np.any(np.isnan(x_test)), "x_test contains NaNs"
+    # assert not np.any(np.isinf(x_test)), "x_test contains Infs"
+    # assert not np.any(np.isnan(y_test)), "y_test contains NaNs"
+    # assert not np.any(np.isinf(y_test)), "y_test contains Infs"
     generator = build_generator()
     discriminator = build_discriminator()
     
@@ -169,8 +204,8 @@ def main():
     
     for epoch in range(epochs):
         # Train the discriminator
-        idx = np.random.randint(0, x_train.shape[0], batch_size)
-        real_signals, labels = x_train[idx], y_train[idx]
+        idx = np.random.randint(0, x_train_normalized.shape[0], batch_size)
+        real_signals, labels = x_train_normalized[idx], y_train[idx]
         
         noise = np.random.normal(0, 1, (batch_size, latent_dim))
         fake_labels = np.random.randint(0, 2, (batch_size, 1)) # event or not event
@@ -184,27 +219,25 @@ def main():
         noise = np.random.normal(0, 1, (batch_size, latent_dim))
         fake_labels = np.random.randint(0, 2, (batch_size, 1))
         g_loss = cgan.train_on_batch([noise, fake_labels], np.ones((batch_size, 1)))
-        
-        if (epoch + 1) % save_interval == 0:
-            print(f'Epoch [{epoch + 1}/{epochs}], D Loss: {d_loss[0]}, D Accuracy: {100*d_loss[1]}, G Loss: {g_loss[0]}, G Accuracy: {100*g_loss[1]}')
-            
-            # Save models
-            # generator.save(f'generator_epoch_{epoch + 1}.h5')
-            # discriminator.save(f'discriminator_epoch_{epoch + 1}.h5')
-    
-            # Inside your training loop
+        d_losses.append(d_loss[0])
+        g_losses.append(g_loss[0])
         if epoch == epochs - 1:
             generated_samples = generator.predict([np.random.normal(0, 1, (16, latent_dim)), np.random.randint(0, 2, (16, 1))])
+            generated_samples_denorm = denormalize_data(generated_samples)
             
             # Save generated samples to a text file
-            save_signals_to_txt(f'generated_samples_epoch_{epoch + 1}.txt', generated_samples)
+            save_signals_to_txt(f'generated_samples_epoch_{epoch + 1}.txt', generated_samples_denorm)
 
     noise = np.random.normal(0, 1, (x_test.shape[0], latent_dim))
     fake_labels = np.random.randint(0, 2, (x_test.shape[0], 1))
     fake_signals = generator.predict([noise, fake_labels])
-    evaluate_discriminator_performance(discriminator, x_test, y_test, fake_signals, fake_labels)
-    evaluate_samples(discriminator,x_test, y_test)
+    print("Fake and real samples classification")
+    evaluate_discriminator_performance(discriminator, x_test_normalized, y_test, fake_signals, fake_labels)
+    print("Real samples predicted as Event/Nonevent")
+    evaluate_samples(discriminator,x_test_normalized, y_test)
+    print("Fake samples predicted as Event/Nonevent")
     evaluate_samples(discriminator, fake_signals, fake_labels)
+    plot_losses(d_losses, g_losses, file_path)
 
 def evaluate_samples(model, x_data, y_data):
     # Ensure y_data contains both data and labels
@@ -294,6 +327,14 @@ def evaluate_discriminator_performance(discriminator, x_real, y_real, x_fake, y_
     print(f"Fake samples predicted as real: {fake_predicted_real_as_real}")
     print(f"Fake samples predicted as fake: {fake_predicted_real_as_fake}")
 
+def normalize_data(data):
+    return data / max_value
+
+def denormalize_data(normalized_data):
+    return normalized_data * max_value
+
+def main():
+    train()
 
 if __name__ == "__main__":
     main()

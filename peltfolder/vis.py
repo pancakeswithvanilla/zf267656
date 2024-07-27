@@ -169,7 +169,23 @@ def check_line_length(file_name):
                     total_length = total_length + 1
     return total_length
 
-def plot_signal(signal, output_file_name):
+def read_signals_from_generated(file_name):
+    signals = []
+    with open(file_name, 'r') as file:
+        current_signal = []
+        for line in file:
+            stripped_line = line.strip()
+            if stripped_line == "":
+                if current_signal:
+                    signals.append(current_signal)
+                    current_signal = []
+            else:
+                current_signal.extend(map(float, stripped_line.split()))
+        if current_signal:  # To handle the last signal if no trailing newline exists
+            signals.append(current_signal)
+    return signals
+
+def plot_signal(signal, output_file_name, num_elements):
     """
     Plot the signal data and save the plot to a file.
 
@@ -177,7 +193,7 @@ def plot_signal(signal, output_file_name):
         signal (np.ndarray): The signal data to be plotted.
         output_file_name (str): The file name to save the plot.
     """
-    # Determine the indices of the signal
+    signal = signal[:num_elements]
     indices = np.arange(len(signal))
     
     # Plot the signal data
@@ -194,18 +210,23 @@ def plot_signal(signal, output_file_name):
 
 # Read, pad, and write the signals
 desired_length = 11000
+directory = "/work/zf267656/peltfolder/"
 # signals = read_signals(events_name)
 # padded_signals = pad_signals(signals, desired_length)
 # write_signals(events_name, padded_signals)
 # total_length= check_line_length(events_name)
-signals = read_signals(nonevents_name)
-fragmented_signals = fragment_signals(signals, desired_length)
-fragmented_padded_signals = pad_signals(fragmented_signals, desired_length)
-write_signals(nonevents_name, fragmented_padded_signals)
-total_length= check_line_length(nonevents_name)
-print("length of nonevents is equal:",total_length)
 signals = read_signals(events_name)
-padded_signals = pad_signals(signals, desired_length)
-write_signals(events_name, padded_signals)
-total_length= check_line_length(events_name)
-print("length of nonevents is equal:",total_length)
+generated_signals = read_signals_from_generated("generated_samples_epoch_1000.txt")
+output_file_name = "generated_signal.png"
+output_file_path = os.path.join(directory, output_file_name)
+plot_signal(generated_signals[0], output_file_path, 1000)
+# fragmented_signals = fragment_signals(signals, desired_length)
+# fragmented_padded_signals = pad_signals(fragmented_signals, desired_length)
+# write_signals(nonevents_name, fragmented_padded_signals)
+# total_length= check_line_length(nonevents_name)
+# print("length of nonevents is equal:",total_length)
+# signals = read_signals(events_name)
+# padded_signals = pad_signals(signals, desired_length)
+# write_signals(events_name, padded_signals)
+# total_length= check_line_length(events_name)
+# print("length of nonevents is equal:",total_length)
