@@ -20,13 +20,15 @@ from numpy.random import randn
 import matplotlib.pyplot as plt
 import os
 
-input_dim = 11000
+input_dim = 100
 signal_events_file = "signalevents.txt"
 signal_nonevents_file = "signalnonevents.txt"
+frag_signal_events_file = "fragsigev.txt"
+frag_signal_nonevents_file = "fragsignonev.txt"
 batch_size = 64
 dropout_rate = 0.2
 latent_dim = 50 # see how model performs for different latent dim values
-epochs = 100
+epochs = 1000
 max_value = 269.25
 save_interval = 100
 def read_signals(file_name):
@@ -40,8 +42,8 @@ def read_signals(file_name):
 
 def prepare_data() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # Load data
-    signal_events = read_signals(signal_events_file)
-    signal_nonevents = read_signals(signal_nonevents_file)
+    signal_events = read_signals(frag_signal_events_file)
+    signal_nonevents = read_signals(frag_signal_nonevents_file)
     
     # Get the number of samples for events and nonevents
     num_events = signal_events.shape[0]

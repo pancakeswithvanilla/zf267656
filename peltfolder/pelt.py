@@ -117,6 +117,7 @@ for event in new_event_list:
         start_index = start_index + 1
     total_events.append(one_event)
 
+nonevent_list = [nonevent for nonevent in nonevent_list if nonevent[2]>= 100]
 for nonevent in nonevent_list:
     one_nonevent =[]
     start_index = nonevent[0]
