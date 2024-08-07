@@ -125,16 +125,8 @@ def build_generator():
     return Model([noise, signal_label], signal)
 
 def save_signals_to_txt(file_name, signals):
-    """
-    Save each signal to a text file, with each signal on a separate line.
-
-    Args:
-        file_name (str): The path to the file where signals will be saved.
-        signals (np.ndarray): A NumPy array where each row represents a signal.
-    """
     with open(file_name, 'w') as file:
         for signal in signals:
-            # Convert each signal to a space-separated string and write it to the file
             line = ' '.join(map(str, signal))
             file.write(line + '\n\n')
 

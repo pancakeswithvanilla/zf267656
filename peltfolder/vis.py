@@ -223,38 +223,39 @@ def plot_signal(signal, output_file_name):
     plt.close()
 
 
-desired_length = 100
+# desired_length = 100
 directory = "/work/zf267656/peltfolder/plots"
-signals = read_signals(events_name)
-fragmented_signals = fragment_signals(signals, desired_length)
-print(fragmented_signals.shape)
-write_signals(fragmented_events_name, fragmented_signals)
-# for index in range (10):
-#     output_file_name = f"generated_signalevent{index+1}.png"
-#     output_file_path = os.path.join(directory, output_file_name)
-#     plot_signal(fragmented_signals[index], output_file_path)
+# signals = read_signals(events_name)
+# fragmented_signals = fragment_signals(signals, desired_length)
+# print(fragmented_signals.shape)
+# write_signals(fragmented_events_name, fragmented_signals)
+# # for index in range (10):
+# #     output_file_name = f"generated_signalevent{index+1}.png"
+# #     output_file_path = os.path.join(directory, output_file_name)
+# #     plot_signal(fragmented_signals[index], output_file_path)
 
-signals = read_signals(nonevents_name)
-print("Shortest list:",find_shortest_length(signals))
-fragmented_signals = fragment_signals(signals, desired_length)
-print(fragmented_signals.shape)
-write_signals(fragmented_non_events_name, fragmented_signals)
-# # # fragmented_padded_signals = pad_signals(fragmented_signals, desired_length)
-# # # write_signals(nonevents_name, fragmented_padded_signals)
-# total_length= check_line_length(fragmented_non_events_name)
-# print("length of nonevents is equal:",total_length)
-# for index in range (10):
-#     output_file_name = f"generated_signalnonevent{index+1}.png"
-#     output_file_path = os.path.join(directory, output_file_name)
-#     plot_signal(fragmented_signals[index], output_file_path)
-# # signals = read_signals(events_name)
-# # padded_signals = pad_signals(signals, desired_length)
-# # write_signals(events_name, padded_signals)
-# # total_length= check_line_length(events_name)
+# signals = read_signals(nonevents_name)
+# print("Shortest list:",find_shortest_length(signals))
+# fragmented_signals = fragment_signals(signals, desired_length)
+# print(fragmented_signals.shape)
+# write_signals(fragmented_non_events_name, fragmented_signals)
+# # # # fragmented_padded_signals = pad_signals(fragmented_signals, desired_length)
+# # # # write_signals(nonevents_name, fragmented_padded_signals)
+# # total_length= check_line_length(fragmented_non_events_name)
 # # print("length of nonevents is equal:",total_length)
+# # for index in range (10):
+# #     output_file_name = f"generated_signalnonevent{index+1}.png"
+# #     output_file_path = os.path.join(directory, output_file_name)
+# #     plot_signal(fragmented_signals[index], output_file_path)
+# # # signals = read_signals(events_name)
+# # # padded_signals = pad_signals(signals, desired_length)
+# # # write_signals(events_name, padded_signals)
+# # # total_length= check_line_length(events_name)
+# # # print("length of nonevents is equal:",total_length)
 
-gen_sig = read_signals_from_generated("generated_samples_epoch_1000.txt")
+gen_sig = read_signals_from_generated("generated_samples_epoch_5000.txt")
 print(gen_sig.shape)
-output_file_name = f"gan_signal.png"
+output_file_name = f"gan_signal5000[0].png"
 output_file_path = os.path.join(directory, output_file_name)
 plot_signal(gen_sig[0], output_file_path)
+
