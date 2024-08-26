@@ -20,7 +20,7 @@ from numpy.random import rand
 from numpy.random import randn
 import matplotlib.pyplot as plt
 import os
-
+print("cat")
 
 latent_dim = 100
 output_dim = 100  
@@ -29,7 +29,7 @@ learning_rate = 5e-5
 batch_size = 64
 critic_iterations = 5
 weight_clip = 0.01
-num_epochs = 1001
+num_epochs = 5000
 max_value = 269.5
 min_value = -0.015
 num_samples = 10
@@ -47,10 +47,9 @@ def read_signals(file_name):
 
 def prepare_data() -> Tuple[np.ndarray, np.ndarray]:
     signal_events = read_signals(frag_signal_events_file)
-    signal_nonevents = read_signals(frag_signal_nonevents_file)
-    x = np.vstack((signal_events, signal_nonevents))
-    x_train, x_test = train_test_split(x, test_size=0.1, random_state=42)
-    print("x_train, x_test share common elements",check_common_elements(x_train, x_test))
+    # signal_nonevents = read_signals(frag_signal_nonevents_file)
+    # x = np.vstack((signal_events, signal_nonevents))
+    x_train, x_test = train_test_split(signal_events, test_size=0.1, random_state=42)
     return x_train, x_test
 
 def check_common_elements(x_train: np.ndarray, x_test: np.ndarray) -> bool:
@@ -139,9 +138,7 @@ generator_losses = []
 x_train, x_test = prepare_data()
 x_train_normalized = normalize_data(x_train)
 x_test_normalized = normalize_data(x_test)
-print("Number of x_test samples",x_test.shape[0])
-print("Number of x_train samples",x_train.shape[0])
-save_path =f'losseswgan{num_epochs}{critic_iterations}_plot.png'
+save_path =f'losseswgan_only_events_{num_epochs}{critic_iterations}_plot.png'
 plots_directory = "/work/zf267656/peltfolder/plots"
 file_path = os.path.join(plots_directory, save_path)
 
@@ -156,6 +153,7 @@ def save_signals_to_txt(file_name, signals):
 
 def save_accuracy_metrics(file_name, real_correct, fake_correct, real_acc, fake_acc, critic_iterations):
     with open(file_name, 'a') as file:
+        print(critic_iterations)
         file.write(f"{critic_iterations}\n")
         file.write(f"Number of real samples correctly predicted as real: {real_correct}\n")
         file.write(f"Number of fake samples correctly predicted as fake: {fake_correct}\n")
@@ -171,8 +169,8 @@ def evaluate_discriminator_performance(batch, critic_iterations):
     fake_labels = tf.zeros_like(critic_fake, dtype=tf.int32)
     print("Real labels", critic_real)
     print("Fake labels", critic_fake)
-    real_predictions = tf.cast(critic_real < 0.5, tf.int32) #changed sign
-    fake_predictions = tf.cast(critic_fake >= 0.5, tf.int32)
+    real_predictions = tf.cast(critic_real >= 0.5, tf.int32) #changed sign
+    fake_predictions = tf.cast(critic_fake < 0.5, tf.int32)
     real_accuracy = tf.reduce_mean(tf.cast(real_predictions == real_labels, tf.float32)).numpy()
     fake_accuracy = tf.reduce_mean(tf.cast(fake_predictions == fake_labels, tf.float32)).numpy()
     total_accuracy = (real_accuracy + fake_accuracy) / 2
@@ -182,17 +180,29 @@ def evaluate_discriminator_performance(batch, critic_iterations):
     save_accuracy_metrics(file_name, real_correct_predictions, fake_correct_predictions, real_accuracy, fake_accuracy,critic_iterations)
     return real_accuracy, fake_accuracy
 
+epoch_file = "/work/zf267656/peltfolder/current_epoch.txt"
+if os.path.exists(epoch_file) and os.path.getsize(epoch_file) > 0:
+    with open(epoch_file, "r") as f:
+        last_epoch = int(f.read().strip())
+else:
+    last_epoch = 0 
 
-
-def train(critic_iterations):
-    num_epochs = 1000
+def train(last_epoch, total_epochs):
+    #num_epochs = 2500
+    critic_iterations = 10
     x_train, x_test = prepare_data()
     x_train_normalized = normalize_data(x_train)
     x_test_normalized = normalize_data(x_test)
     save_path =f'losseswgan{num_epochs}{critic_iterations}_plot.png'
     plots_directory = "/work/zf267656/peltfolder/plots"
     file_path = os.path.join(plots_directory, save_path)
-    for epoch in range(num_epochs):
+    generator_save_path = f'/work/zf267656/peltfolder/models/generator_{critic_iterations}_{total_epochs}.h5'
+    critic_save_path = f'/work/zf267656/peltfolder/models/critic_{critic_iterations}_{total_epochs}.h5'
+
+
+    print(f"Starting from epoch: {last_epoch}")
+
+    for epoch in range(last_epoch, total_epochs):
         print("Epoch Number: ", epoch)
         data_batches = create_batches(x_train_normalized)
         for _ in range(critic_iterations):
@@ -225,15 +235,20 @@ def train(critic_iterations):
         generator_losses.append(loss_gen)
         gen_grads = gen_tape.gradient(loss_gen, generator.trainable_variables)
         opt_gen.apply_gradients(zip(gen_grads, generator.trainable_variables))
-        if epoch == num_epochs - 1:
+        if epoch == total_epochs - 1:
             noise = np.random.normal(0, 1, (num_samples, latent_dim))
             generated_samples = generator(noise, training=False)
             denorm_generated_samples = denormalize_data(generated_samples.numpy())
-            save_signals_to_txt(f'generated_samples_epoch_{epoch + 1}{critic_iterations}.txt', denorm_generated_samples)
+            save_signals_to_txt(f'generated_samples_epoch_events_{epoch + 1}{critic_iterations}.txt', denorm_generated_samples)
 
+    with open(epoch_file, "w") as f:
+            f.write(str(epoch + 1))
+    generator.save(generator_save_path)
+    critic.save(critic_save_path)
+    print(f"Models saved to {generator_save_path} and {critic_save_path}")
     plot_losses(generator_losses, critic_losses, save_path)
     real_accuracy, fake_accuracy = evaluate_discriminator_performance(x_test_normalized, critic_iterations)
     return real_accuracy, fake_accuracy 
     
     
-#train()
+train(last_epoch, total_epochs = 4000)

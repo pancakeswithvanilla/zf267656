@@ -5,3 +5,6 @@ generator_epoch_*.h5
 generated_samples_epoch_1000.txt
 fragsigev.txt
 fragsignonev.txt
+losseswgan*.png
+/models
+/generated_signals
