@@ -42,6 +42,7 @@ def find_clusters():
     # Get points in each cluster
     cluster_1 = data[labels == 0]
     cluster_2 = data[labels == 1]
+    plot_cluster_histogram(cluster_1, cluster_2)
     cluster1_indices = np.where(kmeans.labels_ == 0)[0]
     cluster2_indices = np.where(kmeans.labels_ == 1)[0]
     second_cluster_distances = distances[labels == 1]
@@ -62,7 +63,7 @@ def find_clusters():
 
     threshold = mean_second_cluster - std_dev_second_cluster * 2
     filtered_cluster2_indices = [index for index, value in enumerate(data) if value > threshold]
-    with open(log_file_path, "w") as log_file:
+    with open(log_file_path, "a") as log_file:
         log_file.write(f"Avg cluster_1 value: {np.mean(cluster_1):.4f}\n")
         log_file.write(f"Avg cluster_2 value: {np.mean(cluster_2):.4f}\n")
         log_file.write(f"Max distance from nonevent centroid: {furthest_distance:.4f}\n")
@@ -73,6 +74,17 @@ def find_clusters():
 
     return cluster1_indices, filtered_cluster2_indices
 
+def plot_cluster_histogram(cluster_1, cluster_2):
+    cluster_1_flat = np.array([val[0] for val in cluster_1])
+    cluster_2_flat = np.array([val[0] for val in cluster_2])
+    plt.figure()
+    plt.hist(cluster_1_flat, bins=50, color='blue', alpha=0.7, label='Cluster 1')
+    plt.hist(cluster_2_flat, bins=50, color='red', alpha=0.7, label='Cluster 2')
+    plt.xlabel('Values')
+    plt.ylabel('Frequency')
+    plt.title('Distribution of Cluster 1 and Cluster 2')
+    plt.legend()
+    plt.savefig("plots/cluster/histogram_of_cluster.png")
 
 def is_file_already_written(file_name):
     return os.path.exists(file_name) and os.path.getsize(file_name) > 0
@@ -266,9 +278,13 @@ def compare_pelt_cusum_mine():
     comparison(found_by_mine, found_by_cusum, "cusum")
     
 
-def compute_fft_for_my_events():
-    found_by_mine,_ ,_ = load_data()
-    apply_fft_on_samples(found_by_mine)
+def compute_fft():
+    found_by_mine,found_by_cusum ,found_by_pelt = load_data()
+    nonevents_list = find_nonevents()
+    apply_fft_on_samples(found_by_pelt[100:110], "pelt")
+    apply_fft_on_samples(found_by_mine[30:40], "mine")
+    apply_fft_on_samples(found_by_cusum[200:210], "cusum")
+    apply_fft_on_samples(nonevents_list[150:175], "non_event")
 
 def comparison(found_by_mine, found_by_algo, name_of_algo):
     counter_mine = 0
@@ -306,7 +322,7 @@ def comparison(found_by_mine, found_by_algo, name_of_algo):
             else:
                 counter_mine +=1
     with open(log_file_path, "a") as log_file:
-        log_file.write(f"Total found events:{ total_events}")
+        log_file.write(f"Total found events:{total_events}")
     plot_not_found_events(list_of_my_indices, list_of_algo_indices, found_by_algo, found_by_mine, name_of_algo)
 
 def plot_not_found_events(list_of_my_indices, list_of_algo_indices, found_by_algo, found_by_mine, name_of_algo):
@@ -395,24 +411,22 @@ def plot_single_events(start_algo, end_algo, comp_id, name_of_algo):
     # Save the plot to the plots folder
     plt.savefig(f"events_with_no_comp/{name_of_algo}/single_plot_{comp_id}.png")
 
-def apply_fft_on_samples(sample_lists):
+def apply_fft_on_samples(sample_lists, algo_name):
     fft_results = []
-    
-    # Loop through each list of samples
     for idx, samples in enumerate(sample_lists):
-        if idx >= 10:  # Only plot the first 10 results
-            break
-        
-        # Extract signal data based on start and end indices
-        start_mine = samples[0]
-        end_mine = samples[1]
-        signal = signal_data[start_mine:end_mine]
-        print("signal start", signal_data[start_mine], "signal_end", signal_data[end_mine])
+        if algo_name == "mine":
+            start = samples[0]
+            end = samples[1]
+        else:
+            start = samples["start_end_in_raw"][0]
+            end = samples["start_end_in_raw"][1]
+        signal = signal_data[start:end]
+        print("signal start", signal_data[start], "signal_end", signal_data[end])
         
         fft_result = np.fft.fft(signal)
         fft_results.append(fft_result)
         
- 
+        plt.ylim([20000]) 
         plt.figure()
         fft_magnitude = np.abs(fft_result) 
         plt.plot(fft_magnitude)
@@ -421,11 +435,14 @@ def apply_fft_on_samples(sample_lists):
         plt.ylabel("Magnitude")
         
         # Save the plot to the plots folder
-        plt.savefig(f"plots/fft_samples/fft_plot_{idx + 1}.png")
+        plt.savefig(f"plots/fft_samples/{algo_name}/fft_plot_{idx + 1}.png")
         plt.close()  # Close the plot to free up memory
 
 
 
 
 #compare_pelt_cusum_mine()
-compute_fft_for_my_events()
+compute_fft()
+#clustering plot
+#fft benchmark um zu testen ob es funktioniert
+#gan losses computen

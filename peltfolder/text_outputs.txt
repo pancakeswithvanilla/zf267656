@@ -1,0 +1,206 @@
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length: 602165
+Min signal length: 8
+Avg signal length: 1556.9939347990903
+Number of detected events: 2638
+Events with more than 200 signals: 1147
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length pelt: 602165
+Min signal length pelt: 8
+Avg signal length pelt: 1556.9939347990903
+Number of detected events pelt: 2638
+Events with more than 200 signals: 1147
+Not found  my events in total: 173
+Not found  pelt events in total: 3
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264
+Total found events:1144
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length: 602165
+Min signal length: 8
+Avg signal length: 1556.9939347990903
+Number of detected events: 2638
+Events with more than 200 signals: 1147
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264
+Total found events:264
+Not found  my events in total: 1053
+Not found  cusum events in total: 0
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length: 602165
+Min signal length: 8
+Avg signal length: 1556.9939347990903
+Number of detected events: 2638
+Events with more than 200 signals: 1147
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length: 602165
+Min signal length: 8
+Avg signal length: 1556.9939347990903
+Number of detected events: 2638
+Events with more than 200 signals: 1147
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length: 602165
+Min signal length: 8
+Avg signal length: 1556.9939347990903
+Number of detected events: 2638
+Events with more than 200 signals: 1147
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length: 602165
+Min signal length: 8
+Avg signal length: 1556.9939347990903
+Number of detected events: 2638
+Events with more than 200 signals: 1147
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length: 602165
+Min signal length: 8
+Avg signal length: 1556.9939347990903
+Number of detected events: 2638
+Events with more than 200 signals: 1147
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length: 602165
+Min signal length: 8
+Avg signal length: 1556.9939347990903
+Number of detected events: 2638
+Events with more than 200 signals: 1147
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264
+Avg cluster_1 value: 68.4342
+Avg cluster_2 value: 249.1490
+Max distance from nonevent centroid: 90.0970
+Avg distance from nonevent centroid: 3.6667
+Standard deviation of distances in the first cluster: 14.1833
+Standard deviation of distances in the second cluster: 5.3089
+Percentage of samples within one standard deviation: 96.44%
+Mean of signal_avg: 107.6879
+Standard deviation of signal_avg: 25.8527
+Events found by my algo with more than 200 signals: 1317
+Max signal length: 602165
+Min signal length: 8
+Avg signal length: 1556.9939347990903
+Number of detected events: 2638
+Events with more than 200 signals: 1147
+Max signal length: 600882
+Min signal length: 11
+Avg signal length: 7645.527950310559
+Number of detected events: 322
+Events with more than 200 signals: 264

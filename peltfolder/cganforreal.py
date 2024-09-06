@@ -66,21 +66,12 @@ def prepare_data() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     
 
 def build_discriminator():
-    # Define the input layers
     signal_input = Input(shape=(input_dim,))
     signal_label_input = Input(shape=(1,), dtype='int32')
-
-    # Define embedding for the label
     signal_embedding = Flatten()(Embedding(2, latent_dim)(signal_label_input))
-    
-    # Concatenate the signal and label embedding
     model_input = Concatenate()([signal_input, signal_embedding])
-    
-    # Masking layer: apply mask to the concatenated input if needed
-    # This is useful if you have padded sequences, but in this case, it's added for completeness.
     masked_input = Masking(mask_value=0.0)(model_input)
     
-    # Create the model
     model = Sequential([
         Dense(512, input_shape=(input_dim + latent_dim,)),
         BatchNormalization(),
@@ -93,10 +84,9 @@ def build_discriminator():
         Dense(1, activation='sigmoid')
     ])
     
-    # Pass the masked input through the model
     validity = model(model_input)
     
-    return Model([signal_input, signal_label_input], validity) # signal label input is for event vs nonevent, validity for sample is real vs fake
+    return Model([signal_input, signal_label_input], validity) 
 
 def build_generator():
     model = Sequential()

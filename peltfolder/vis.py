@@ -107,7 +107,7 @@ fragmented_events_name = "fragsigev.txt"
 nonevents_name ="signalnonevents.txt"
 fragmented_non_events_name = "fragsignonev.txt"
 signals = []
-Function to read signals from a file
+#Function to read signals from a file
 def read_signals(file_name):
     signals = []
     with open(file_name, 'r') as file:
@@ -166,7 +166,7 @@ def write_signals(file_name, signals):
             #     break
             # Convert the numpy array or list to a space-separated string and write it to the file
             file.write(' '.join(map(str, signal)) + '\n')
-
+desired_length = 100
 
 def check_line_length(file_name):
     total_length = 0
