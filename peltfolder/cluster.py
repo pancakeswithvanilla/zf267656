@@ -11,6 +11,16 @@ import scipy
 from Pelt.detection import get_events
 import math
 import json
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
+from sklearn.cluster import AgglomerativeClustering
+from bayes_opt import BayesianOptimization
+from functools import partial
+from sklearn.decomposition import PCA
+import shutil
+from sklearn.manifold import TSNE
+from sklearn.preprocessing import MinMaxScaler
+from matplotlib.colors import ListedColormap
 
 abf_file = "/work/zf267656/peltfolder/dnadata/20210703 wtAeL 4M KCl A4 p2 120mV-9.abf"
 signal = pyabf.ABF(abf_file)
@@ -42,7 +52,7 @@ def find_clusters():
     # Get points in each cluster
     cluster_1 = data[labels == 0]
     cluster_2 = data[labels == 1]
-    plot_cluster_histogram(cluster_1, cluster_2)
+    #plot_cluster_histogram(cluster_1, cluster_2)
     cluster1_indices = np.where(kmeans.labels_ == 0)[0]
     cluster2_indices = np.where(kmeans.labels_ == 1)[0]
     second_cluster_distances = distances[labels == 1]
@@ -86,6 +96,20 @@ def plot_cluster_histogram(cluster_1, cluster_2):
     plt.legend()
     plt.savefig("plots/cluster/histogram_of_cluster.png")
 
+def duration_histogram(durations, algo_name):
+        # Plot the distribution of durations with a focus on durations between 0 and 10000, all events have 4 nucleotides
+    plt.figure(figsize=(12, 6))
+
+    # Histogram
+    plt.hist([d for d in durations if d <= 10000], bins=50, edgecolor='k', alpha=0.7)
+    plt.xlabel('Duration')
+    plt.ylabel('Frequency')
+    plt.title('Histogram of Event Durations')
+
+    # Save the plot to a file
+    plt.tight_layout()
+    plt.savefig(f'plots/cluster/event_duration_{algo_name}')
+
 def is_file_already_written(file_name):
     return os.path.exists(file_name) and os.path.getsize(file_name) > 0
 
@@ -103,13 +127,15 @@ def find_nonevents():
             end_index = prev_index
             duration = end_index - start_index
             signal_avg = float(signal_sum // duration)
-            nonevent_list.append([start_index, end_index, duration, signal_avg])
+            if duration > 0:
+                nonevent_list.append([start_index, end_index, duration, signal_avg])
             start_index = index
             signal_sum = 0
         if index == cluster2_indices[-1]:  
             duration = index - start_index
             signal_avg = float(signal_sum // duration)
-            nonevent_list.append([start_index, index, duration, signal_avg])
+            if duration > 0:
+                nonevent_list.append([start_index, index, duration, signal_avg])
         prev_index = index
     return nonevent_list
 
@@ -134,6 +160,8 @@ def signal_avg_across_events(new_event_list):
 
 def find_events():
     new_event_list = []
+    duration_list = []
+    dna_data_folder = "dnadata" 
     nonevent_list = find_nonevents()
     for index in range(1,len(nonevent_list)) :
         signal_counter = 0
@@ -145,15 +173,28 @@ def find_events():
             signal_sum += signal_data[index]
             if signal_data[index] <= 230:
                 signal_counter +=1
+        if duration >= 100:
+            duration_list.append(duration)
         signal_avg = float(signal_sum // duration)
         if signal_counter >= 200:
             new_event_list.append([start_index, end_index, duration, signal_avg])
-    #new_event_trimmed = [newevent for newevent in new_event_list if newevent[2]>= 150]
-    signal_avg_across_events(new_event_list)
-        #new_event_trimmed = [newevent for newevent in new_event_list if newevent[3]>= 220]
+            file_name = f"my_events_signals.txt"
+            file_path = os.path.join(dna_data_folder, file_name)
+            with open(file_path, "a") as f:
+                f.write(" ".join([str(signal_data[i]) for i in range(start_index, end_index + 1)]) + "\n")
+    #signal_avg_across_events(new_event_list)
+    #duration_histogram(duration_list, "mine")
     with open(log_file_path, "a") as log_file:
         log_file.write(f"Events found by my algo with more than 200 signals: {len(new_event_list)}\n")
     return new_event_list
+
+def read_signal_file(file_path):
+    list_of_lists = []
+    with open(file_path, "r") as f:
+        for line in f:
+            row_data = [float(value) for value in line.strip().split()]
+            list_of_lists.append(row_data)
+    return list_of_lists
 
 def run_pelt(): #got algorithm for comparison
     samplerate = 40_000_000               #samplerate of signal
@@ -230,12 +271,13 @@ def run_cusum(): #got algorithm for comparison
             fit_params=fit_params, show=show, folder_path=save_folder, filename=file_name)
     
 
-def calculate_len_sig(data):
+def calculate_len_sig(data, algo_name):
     events = data["events"]
     length = 0
     min_length = math.inf
     max_length = 0
     counter = 0
+    duration_list = []
     filtered_list_events =[]
     for index in range(len(events)):
         sig_counter = 0
@@ -243,9 +285,15 @@ def calculate_len_sig(data):
         start_signal = events[index]["start_end_in_raw"][0]
         end_signal = events[index]["start_end_in_raw"][1]
         signal_segment = signal_data[start_signal:end_signal+1]
+        if 'signal_w_baseline' in events[index]:
+            signal_w_baseline = events[index]['signal_w_baseline']
+            if np.isnan(signal_w_baseline).any():
+                continue
         for sig in signal_segment:
             if sig <= 230:
                 sig_counter +=1
+        if sig_counter >= 100:
+            duration_list.append(sig_counter)
         if sig_counter >= 200:
             counter += 1
             filtered_list_events.append(events[index])
@@ -255,6 +303,7 @@ def calculate_len_sig(data):
             max_length = events_len
         length += events_len
     avg_length = length/len(events)
+    #duration_histogram(duration_list, algo_name)
     with open(log_file_path, "a") as log_file:
         log_file.write(f"Max signal length: {max_length}\n")
         log_file.write(f"Min signal length: {min_length}\n")
@@ -267,9 +316,10 @@ def calculate_len_sig(data):
 def load_data():
     pelt_data = json.load(open('/work/zf267656/peltfolder/dnadata/c_pelt20210703 wtAeL 4M KCl A4 p2 120mV-9.abf.json'))
     cusum_data = json.load(open('/work/zf267656/peltfolder/dnadata/cusum20210703 wtAeL 4M KCl A4 p2 120mV-9.abf.json'))
-    found_by_mine = find_events()
-    found_by_pelt = calculate_len_sig(pelt_data)
-    found_by_cusum = calculate_len_sig(cusum_data)
+    file_path = "dnadata/my_events_signals.txt"
+    found_by_mine = read_signal_file(file_path)
+    found_by_pelt = calculate_len_sig(pelt_data, "pelt")
+    found_by_cusum = calculate_len_sig(cusum_data, "cusum")
     return found_by_mine, found_by_cusum, found_by_pelt
 
 def compare_pelt_cusum_mine():
@@ -414,19 +464,18 @@ def plot_single_events(start_algo, end_algo, comp_id, name_of_algo):
 def apply_fft_on_samples(sample_lists, algo_name):
     fft_results = []
     for idx, samples in enumerate(sample_lists):
-        if algo_name == "mine":
+        if algo_name == "mine" or algo_name =="non_event":
             start = samples[0]
             end = samples[1]
         else:
             start = samples["start_end_in_raw"][0]
             end = samples["start_end_in_raw"][1]
         signal = signal_data[start:end]
-        print("signal start", signal_data[start], "signal_end", signal_data[end])
+        #print("signal start", signal_data[start], "signal_end", signal_data[end])
         
         fft_result = np.fft.fft(signal)
         fft_results.append(fft_result)
         
-        plt.ylim([20000]) 
         plt.figure()
         fft_magnitude = np.abs(fft_result) 
         plt.plot(fft_magnitude)
@@ -434,15 +483,154 @@ def apply_fft_on_samples(sample_lists, algo_name):
         plt.xlabel("Frequency")
         plt.ylabel("Magnitude")
         
-        # Save the plot to the plots folder
+        plt.ylim([0, 10000])  
         plt.savefig(f"plots/fft_samples/{algo_name}/fft_plot_{idx + 1}.png")
-        plt.close()  # Close the plot to free up memory
+        plt.close()  
 
-
-
-
-#compare_pelt_cusum_mine()
-compute_fft()
-#clustering plot
-#fft benchmark um zu testen ob es funktioniert
 #gan losses computen
+        
+def fragment_signals(signals, desired_length):
+    """
+    Fragment signals into smaller segments of a given desired length.
+
+    Args:
+    - signals: List of signals or dictionaries containing 'signal_w_baseline' or just raw signal values.
+    - desired_length: Desired length of each fragment.
+
+    Returns:
+    - fragmented_signals: Numpy array of fragmented signals.
+    """
+    fragmented_signals = []
+    
+    for signal in signals:
+        # Check if the signal is a dictionary or a list of raw values
+        if isinstance(signal, dict) and 'signal_w_baseline' in signal:
+            signal_data = signal['signal_w_baseline']
+        elif isinstance(signal, list) or isinstance(signal, np.ndarray):
+            signal_data = signal
+        else:
+            print(f"Invalid signal format: {signal}")
+            continue
+        
+        # Fragment the signal
+        num_fragments = math.ceil(len(signal_data) / desired_length)
+        for i in range(num_fragments):
+            start_idx = i * desired_length
+            end_idx = start_idx + desired_length
+            
+            # Adjust end_idx to prevent going out of bounds
+            if end_idx > len(signal_data):
+                end_idx = len(signal_data)
+                start_idx = len(signal_data) - desired_length  # Adjust start for last fragment
+            
+            # Extract the fragment
+            fragment = signal_data[start_idx:end_idx]
+            fragmented_signals.append(fragment)
+    
+    return np.array(fragmented_signals)
+
+
+def pca_for_events():
+    my_events, cusum_events, pelt_events = load_data()
+    all_events = {"my_events":my_events, "cusum_events":cusum_events, "pelt_events":pelt_events}
+    segments_list_len = [50, 100, 200]
+    n_comp_list = [5]
+    for key  in all_events:
+        event = all_events.get(key)
+        min = math.inf
+        for event in my_events:
+            if min > len(event):
+                min = len(event)
+        print(f"For {key} min length of an event is: ", min)
+    for segment_len in segments_list_len:
+        for key in all_events:
+            events = all_events.get(key)
+            my_events_fragments = fragment_signals(events, segment_len)
+            for n_components in n_comp_list:
+                pca = PCA(n_components=n_components)
+                pca.fit(my_events_fragments)
+                explained_variance = pca.explained_variance_
+                explained_variance_sum = np.sum(explained_variance)
+
+                plt.figure(figsize=(8, 6))
+                plt.bar(range(1, (n_components+1)), explained_variance)
+                plt.axhline(y=explained_variance_sum, color='r', linestyle='--', label=f'Sum of Explained Variance: {explained_variance_sum:.2f}')
+                plt.xlabel('Principal Components')
+                plt.ylabel('Explained Variance')
+                plt.title(f'Explained Variance by PCA Components for {n_components} features for {key} algo data for data of length {segment_len}')
+                plt.legend()
+                plt.savefig(f"plots/pca/expl_var_ration_{key}_{n_components}_{segment_len}.png")
+
+def preprocess_data(data):
+    """
+    Preprocess the data by scaling.
+    """
+    scaler = MinMaxScaler()
+    scaled_data = scaler.fit_transform(data)
+    return scaled_data
+
+def apply_tsne(data, n_components=2, random_state=0):
+    """
+    Apply t-SNE to the data and reduce dimensions.
+    """
+    tsne = TSNE(n_components=n_components, random_state=random_state)
+    tsne_results = tsne.fit_transform(data)
+    return tsne_results
+
+def plot_tsne(tsne_results, labels=None):
+    """
+    Plot the t-SNE results with specific colors for labels.
+    """
+    plt.figure(figsize=(10, 8))
+    
+    # Define the colormap
+    custom_cmap = ListedColormap(['red', 'blue'])  # Red for label 0, Blue for label 1
+
+    if labels is not None:
+        # Ensure that the labels array contains only 0s and 1s
+        if not np.all(np.isin(labels, [0, 1])):
+            raise ValueError("Labels must contain only 0s and 1s.")
+        
+        scatter = plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c=labels, cmap=custom_cmap, alpha=0.7)
+        plt.colorbar(scatter, label='Event Category', ticks=[0, 1], format=plt.FuncFormatter(lambda x, _: 'Non-Event' if x == 0 else 'Event'))
+    else:
+        plt.scatter(tsne_results[:, 0], tsne_results[:, 1], alpha=0.7)
+    
+    plt.title('t-SNE Visualization of Fragmented Signals')
+    plt.xlabel('t-SNE Component 1')
+    plt.ylabel('t-SNE Component 2')
+    plt.savefig("plots/tsne/events_nonevents_my_algo.png")
+
+def tsne():
+    my_data, _ , _ = load_data()
+    non_events = find_nonevents()
+    noneventsiglist = []
+    for nonevent in non_events:
+        start_index = nonevent[0]
+        end_index = nonevent[1]
+        noneventsignal = []
+        for index in range(start_index, end_index):
+            noneventsignal.append(signal_data[index])
+        noneventsiglist.append(noneventsignal)
+    trimmed_nonevents = [noneventel for noneventel in noneventsiglist if len(noneventel) >=200]
+    trimmed_nonevents = fragment_signals(trimmed_nonevents, 200)
+    my_events_fragments = fragment_signals(my_data, 200)
+    trimmed_nonevents_sample = trimmed_nonevents[0:len(my_events_fragments)]
+    labels_non_events = [0] * len(trimmed_nonevents_sample)
+    labels_events = [1] * len(my_events_fragments)
+    combined_fragments = np.vstack([trimmed_nonevents_sample, my_events_fragments])
+    combined_labels = labels_non_events + labels_events
+    print("trimmed nonevents length", len(trimmed_nonevents_sample), "trimmed my_events", len(my_events_fragments))
+    print(f"Length of combined_fragments: {len(combined_fragments)}")
+    print(f"Length of combined_labels: {len(combined_labels)}")
+    scaled_data = preprocess_data(combined_fragments)
+    tsne_results = apply_tsne(scaled_data)
+    plot_tsne(tsne_results, labels=combined_labels)
+
+#tsne()
+
+#copy_file()
+        #timing comparison of dif algos
+        #struktur bachelorthesis anfangen schreiben
+        #timegan weiterentwickeln
+        #benchmark multiple freiburg

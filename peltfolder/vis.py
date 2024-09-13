@@ -131,20 +131,13 @@ def pad_signals(signals, desired_length):
 def fragment_signals(signals, desired_length):
     fragmented_signals = []
     for signal in signals:
-        # Determine the number of fragments needed
         num_fragments = math.ceil(len(signal) / desired_length)
-        
-        # Split the signal into fragments
         for i in range(num_fragments):
             start_idx = i * desired_length
             end_idx = start_idx + desired_length 
-            
-            # Handle the case where the end index exceeds the signal length
             if end_idx > len(signal):
                 end_idx = len(signal)
-                start_idx = len(signal) - desired_length  # Ensure last fragment has the correct length
-                
-            
+                start_idx = len(signal) - desired_length  
             fragment = signal[start_idx:end_idx]
             
             fragmented_signals.append(fragment)
